@@ -1,120 +1,100 @@
-# class Customer:
-#     def __init__(self, first_name, last_name):
-#         self.first_name = first_name
-#         self.last_name = last_name
-
-#     def reviews(self):
-#         pass
-
-#     def restaurants(self):
-#         pass
-
-#     def num_negative_reviews(self):
-#         pass
-
-#     def has_reviewed_restaurant(self, restaurant):
-#         pass
-    
-# class Restaurant:
-#     def __init__(self, name):
-#         self.name = name
-
-#     def reviews(self):
-#         pass
-
-#     def customers(self):
-#         pass
-
-#     def average_star_rating(self):
-#         pass
-
-#     @classmethod
-#     def top_two_restaurants(cls):
-#         pass
-    
-# class Review:
-#     def __init__(self, customer, restaurant, rating):
-#         self.customer = customer
-#         self.restaurant = restaurant
-#         self.rating = rating
-
-
 class Customer:
-    all = []
-
     def __init__(self, first_name, last_name):
         self.first_name = first_name
         self.last_name = last_name
-        self.reviews = []
-        self.restaurants = []
-        self.all.append(self)
 
-    def __str__(self):
-        return f'{self.first_name} {self.last_name}'
+    @property
+    def first_name(self):
+        return self._first_name
 
-    def add_review(self, review):
-        self.reviews.append(review)
+    @first_name.setter
+    def first_name(self, value):
+        if isinstance(value, str) and 1 <= len(value) <= 25:
+            self._first_name = value
 
-    def add_restaurant(self, restaurant):
-        self.restaurants.append(restaurant)
+    @property
+    def last_name(self):
+        return self._last_name
 
-    def has_reviewed_restaurant(self, restaurant):
-        return restaurant in self.restaurants
+    @last_name.setter
+    def last_name(self, value):
+        if isinstance(value, str) and 1 <= len(value) <= 25:
+            self._last_name = value
+
+    def reviews(self):
+        return [review for review in Review.all if review.customer == self]
+
+    def restaurants(self):
+        return list(set([review.restaurant for review in self.reviews()]))
 
     def num_negative_reviews(self):
-        return sum([1 for r in self.reviews if r.rating < 3])
+        return sum(1 for review in self.reviews() if review.rating <= 2)
+
+    def has_reviewed_restaurant(self, restaurant):
+        return any(review.restaurant == restaurant for review in self.reviews())
 
 
 class Restaurant:
-    all = []
-
     def __init__(self, name):
         self.name = name
-        self.reviews = []
-        self.customers = []
-        self.all.append(self)
 
-    def __str__(self):
-        return self.name
+    def get_name(self):
+        return self._name
 
-    def add_review(self, review):
-        self.reviews.append(review)
+    def set_name(self, name):
+        if isinstance(name, str) and len(name) > 0:
+            self._name = name
 
-    def add_customer(self, customer):
-        self.customers.append(customer)
+    name = property(get_name, set_name)
+
+    def reviews(self):
+        return [review for review in Review.all if review.restaurant == self]
+
+    def customers(self):
+        return list(set([review.customer for review in self.reviews()]))
 
     def average_star_rating(self):
-        return sum([r.rating for r in self.reviews]) / len(self.reviews)
+        ratings = [review.rating for review in self.reviews()]
+        return round(sum(ratings) / len(ratings), 1) if ratings else 0.0
+
+    @classmethod
+    def top_two_restaurants(cls):
+        sorted_restaurants = sorted(cls.reviews(), key=lambda r: r.average_star_rating(), reverse=True)
+        return sorted_restaurants[:2] if len(sorted_restaurants) >= 2 else None
 
 
 class Review:
     all = []
 
     def __init__(self, customer, restaurant, rating):
-        if isinstance(customer, str) or isinstance(restaurant, str):
-            raise Exception("Customer and Restaurant should be instances of their respective classes.")
-
-        if not isinstance(rating, int) or not 1 <= rating <= 5:
-            raise Exception("Rating should be an integer between 1 and 5.")
-
         self.customer = customer
         self.restaurant = restaurant
         self.rating = rating
-        customer.add_review(self)
-        restaurant.add_review(self)
-        self.all.append(self)
+        Review.all.append(self)
 
-    def __str__(self):
-        return f"{self.customer.__str__()} reviews {self.restaurant.name} with a rating of {self.rating}"
+    def get_rating(self):
+        return self._rating
 
+    def set_rating(self, val):
+        if isinstance(val, int) and 1 <= val <= 5:
+            self._rating = val
 
-# Include the following lines to make the all property work
-Customer.all = []
-Restaurant.all = []
-Review.all = []
+    rating = property(get_rating, set_rating)
 
-# Add the following line to complete the multiple inheritance
-class MetaRestaurant(type(Restaurant), type(Customer)):
-    pass
+    def get_customer(self):
+        return self._customer
 
-Restaurant = MetaRestaurant('Restaurant', (object,), dict(Restaurant.__dict__))
+    def set_customer(self, value):
+        if isinstance(value, Customer):
+            self._customer = value
+
+    customer = property(get_customer, set_customer)
+
+    def get_restaurant(self):
+        return self._restaurant
+
+    def set_restaurant(self, value):
+        if isinstance(value, Restaurant):
+            self._restaurant = value
+
+    restaurant = property(get_restaurant, set_restaurant)
